@@ -1,0 +1,46 @@
+split.csv: 1640 rows. scores.csv: 315 rows.
+
+Rows per dataset and split
+--------------------------
+  dataset      split  rows  positive  negative  positive %
+  deepset      train   425       158       267       37.18
+  deepset validation   109        40        69       36.70
+  deepset       test   116        60        56       51.72
+safeguard      train   631       192       439       30.43
+safeguard validation   160        48       112       30.00
+safeguard       test   199        63       136       31.66
+
+Metrics per test set (threshold 0.3719199808094325; positive when score >= threshold)
+-------------------------------------------------------------------------------------
+Each value is followed by its 95% bootstrap interval in brackets.
+
+Test set: deepset
+  test rows                 116
+  positive rows             60 (51.72%)
+  negative rows             56 (48.28%)
+  bootstrap resamples       1000
+  random-scorer AP          0.5172 (equals the positive share)
+  random-scorer AUROC       0.5000
+  precision                 1.0000 [1.0000, 1.0000]
+  recall                    0.8500 [0.7581, 0.9333]
+  false-positive rate       0.0000 [0.0000, 0.0000]
+  AP                        0.9931 [0.9831, 0.9995]
+  AUROC                     0.9917 [0.9798, 0.9994]
+
+Test set: safeguard
+  test rows                 199
+  positive rows             63 (31.66%)
+  negative rows             136 (68.34%)
+  bootstrap resamples       1000
+  random-scorer AP          0.3166 (equals the positive share)
+  random-scorer AUROC       0.5000
+  precision                 0.9836 [0.9455, 1.0000]
+  recall                    0.9524 [0.8906, 1.0000]
+  false-positive rate       0.0074 [0.0000, 0.0234]
+  AP                        0.9906 [0.9760, 1.0000]
+  AUROC                     0.9956 [0.9894, 1.0000]
+
+Warnings
+--------
+- deepset: precision, AP, AUROC at or above 0.99. Name the leakage check you ran and its result in section 3(e).
+- safeguard: AP, AUROC at or above 0.99. Name the leakage check you ran and its result in section 3(e).
