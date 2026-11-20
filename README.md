@@ -4,21 +4,21 @@ Report: `final_checkpoint.pdf` (source: `final_checkpoint.tex`).
 Repository: https://github.com/hungqbui/security_anaylytics_project
 
 Install packages **outside the notebooks** with `python -m pip install -r requirements.txt`.
-The model experiments were executed on a Colab Tesla T4 with Python 3.13.16;
+The model experiments were executed on a Colab NVIDIA L4 with Python 3.13.16;
 data generation and report analysis also run on Python 3.11 CPU.
 
 Run these notebooks top to bottom, in order:
 
 1. `final_data.ipynb` — publisher downloads, original splits, deterministic perturbations,
    GPT paraphrases and automated semantic review.
-2. `final_experiment.ipynb` — frozen probe, three LoRA seeds, representation/concept metrics.
+2. `final_experiment.ipynb` — frozen probe, 20 epochs for each of three LoRA seeds, validation-based epoch selection, representation/concept metrics.
 3. `zero_shot_nli.ipynb` — pretrained NLI detector using fixed class descriptions.
 4. `final_analysis.ipynb` — intervals, verdicts, seed spread, error categories, figure.
 
 The equivalent single command is:
 
 ```bash
-jupyter execute --inplace --timeout=1800 final_data.ipynb final_experiment.ipynb zero_shot_nli.ipynb final_analysis.ipynb
+jupyter execute --inplace --timeout=7200 final_data.ipynb final_experiment.ipynb zero_shot_nli.ipynb final_analysis.ipynb
 ```
 
 The generated CSVs make API regeneration optional. To regenerate them, configure
@@ -45,3 +45,5 @@ and [xTRam1/safe-guard-prompt-injection](https://huggingface.co/datasets/xTRam1/
 The notebooks pin publisher and model revisions. Generated text retains publisher labels;
 automated review is supplementary evidence, not independently verified ground truth.
 AI assistance is disclosed in the report.
+
+The original 269 validation rows are split into separate epoch-selection and threshold-calibration roles in `validation_roles.csv`. `epoch_history.csv` records all 20 epochs per seed; the best epoch by mean AUROC over clean/zero-width/homoglyph/base64 selection copies is restored in memory before test scoring (clean log loss breaks ties). No model checkpoint files are written.
