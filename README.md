@@ -24,8 +24,15 @@ jupyter execute --inplace --timeout=7200 perturbation_preparation.ipynb final_ex
 ```
 
 The generated CSVs make API regeneration optional. To regenerate them, configure
-`OPENAI_API_KEY` and use the notebook's OpenAI-compatible endpoint at `localhost:8080`
-with `gpt-6.1-sol`. Delete only the generated paraphrase/review CSVs you intend to regenerate.
+`API_URL` (the full OpenAI-compatible chat-completions URL) and `OPENAI_API_KEY`:
+
+```bash
+export API_URL="http://localhost:8080/v1/chat/completions"
+export OPENAI_API_KEY="your-key"
+```
+
+Generation uses `gpt-6.1-sol`. These variables are unnecessary when reusing the supplied CSVs.
+Delete only the generated paraphrase/review CSVs you intend to regenerate.
 Generated text is nondeterministic; the supplied CSVs define the reported evaluation set.
 No API credential, model checkpoint or embedding cache is required in the repository.
 
