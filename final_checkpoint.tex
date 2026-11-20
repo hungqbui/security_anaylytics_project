@@ -20,11 +20,13 @@ Quang Hung Bui \quad COSC 4371, Fall 2026 \quad November 20, 2026\\
 
 \fontsize{9}{10.3}\selectfont
 \section{Main comparison}
-\textbf{Question.} Does PEFT improve detection under intent-preserving perturbations, and do its representation changes preserve the injection concept across wording variations? Clean AUROC near 0.99 motivates testing perturbations rather than expecting a meaningful gain at the clean ceiling.
+\textbf{Question.} Where does LoRA fine-tuning remain intolerant to intent-preserving perturbations, and what do learned injection-concept representations reveal about these failures? Clean AUROC near 0.99 motivates testing perturbations rather than expecting a meaningful gain at the clean ceiling.
 
-\textbf{(a) What ran and what stayed fixed.} Compare frozen DeBERTa plus a logistic probe (\code{frozen}) with LoRA plus the same probe-fitting protocol (\code{lora}). An auxiliary \code{zero\_shot} detector uses pretrained NLI weights with class descriptions and no prompt-injection training. It is an external control rather than a controlled encoder-adaptation value. Score every method on identical rows within each column: clean, zero-width, homoglyph and base64 copies of both datasets, plus the generated-paraphrase subset. Changed copies retain their original IDs and labels. The main checker comparison uses seed 15; seeds 15, 16 and 17 separately assess adaptation stability. They are repetitions, not additional values of the adaptation variable.
+\textbf{(a) Scope change, what ran and what stayed fixed.} To keep the focus simple, narrow the planned comparison to four methods: frozen DeBERTa, LoRA, zero-shot NLI, and a standard full fine-tuning baseline. Defer adapters and prompt/prefix tuning. The goal is to examine LoRA's perturbation intolerance through its learned injection-concept representations, including whether adaptation improves ranking while leaving concept separation or benign decisions fragile. This is a question to test, not an assumption that LoRA necessarily reduces robustness.
 
-Retain the midsemester 1,640 rows: 1,056 training, 269 validation and 315 test rows (116 deepset; 199 Safe-Guard). Use the pinned data/model revisions and exact split construction in the notebooks: seed 15, publisher test partitions, stratified 20\% validation within publisher training, fixed Safe-Guard 800/200 subsamples, and cross-boundary duplicate-group removal. The main encoder is \code{microsoft/deberta-v3-base}, revision \code{8ccc9b6f36199bec6961081d44eb72fb3f7353f3}. Training data, pretrained initialization, 128-token truncation, inference batch 32, last-layer nonspecial/nonpadding mean pooling, test rows and probe hyperparameters remain fixed. No perturbations enter gradient-based weight fitting; they are used for validation selection and testing. Changes since midsemester: replace the one-epoch budget pilot with 20-epoch validation-selected LoRA and perturbation columns; use higher AUROC as the direction of interest because the present question concerns improvement. The broader adapter/prompt/full-tuning matrix remains unfinished, dated in Section 6.
+Completed comparisons use frozen DeBERTa plus a logistic probe (\code{frozen}) and LoRA plus the same probe-fitting protocol (\code{lora}). An auxiliary \code{zero\_shot} detector uses pretrained NLI weights with class descriptions and no prompt-injection training. It is an external control rather than a controlled encoder-adaptation value. Full fine-tuning remains planned; it will use the same data boundaries, pooling and probe evaluation. Score every method on identical rows within each column: clean, zero-width, homoglyph and base64 copies of both datasets, plus the generated-paraphrase subset. Changed copies retain their original IDs and labels. The main checker comparison uses seed 15; seeds 15, 16 and 17 separately assess adaptation stability. They are repetitions, not additional values of the adaptation variable.
+
+Retain the midsemester 1,640 rows: 1,056 training, 269 validation and 315 test rows (116 deepset; 199 Safe-Guard). Use the pinned data/model revisions and exact split construction in the notebooks: seed 15, publisher test partitions, stratified 20\% validation within publisher training, fixed Safe-Guard 800/200 subsamples, and cross-boundary duplicate-group removal. The main encoder is \code{microsoft/deberta-v3-base}, revision \code{8ccc9b6f36199bec6961081d44eb72fb3f7353f3}. Training data, pretrained initialization, 128-token truncation, inference batch 32, last-layer nonspecial/nonpadding mean pooling, test rows and probe hyperparameters remain fixed. No perturbations enter gradient-based weight fitting; they are used for validation selection and testing. Changes since midsemester: replace the one-epoch budget pilot with 20-epoch validation-selected LoRA and perturbation columns; use higher AUROC as the direction of interest because the present question concerns improvement. Section 6 gives the reduced remaining plan.
 
 LoRA updates query/value projections in the last two encoder layers: rank 4, scaling 8, dropout 0.05, 24,576 adapter parameters, training batch 8, 20 epochs. A temporary weighted-BCE head supplies the adaptation loss and is discarded. Each final/epoch probe uses training-only StandardScaler and balanced logistic regression ($C=1$, $L_2$, lbfgs, 2,000 iterations). Split original validation rows 50/50 by dataset/label (seed 15), assigning related groups to one role. \ValidationRolesDescription\ Retain the epoch with highest mean selection AUROC across clean/zero-width/homoglyph/base64 copies; clean probe log loss breaks ties. The restored state is scored on test only after selection. Appendix C gives the optimizer details and full learning curves. Runs use Colab NVIDIA L4, Python 3.13.16, with packages in \code{requirements.txt}.
 
@@ -80,7 +82,7 @@ As a secondary diagnostic inspired by \href{https://arxiv.org/html/2310.01405v4#
 
 \textbf{(b) Limitation.} The AUROC gains do not establish reliable detection at the clean-calibrated threshold: Safe-Guard homoglyph FPR rises from 0.5956 to 0.7868, and zero-width FPR remains 1.0000. Thus the positive verdicts concern ranking improvement; threshold transfer and benign false alarms remain unresolved.
 
-\textbf{Resolving check: drift and robustness.} Training drift $D=0.179$--$0.237$ shows substantial representation movement. Yet the seed-15 held-out concept gap under homoglyphs increases only from 1.106 to 1.151, and contrast cosine from 0.182 to 0.188: modest geometric gains do not establish an invariant concept or explain the false alarms. Since $D$ compares before/after training, additionally evaluate perturbation drift $\delta_m^{\rm adv}(x)=h_m(Tx)-h_m(x)$ on label-reviewed held-out pairs. Report its relative norm and projection onto the fixed training-estimated $u_m$, separately for injections and benign prompts, alongside score changes, recall and FPR. Useful robustness requires retained injection--benign separation, not merely small drift or a larger concept norm. To distinguish threshold shift from lost concept separation, calibrate a threshold on separate clean/perturbed validation examples at at most 5\% benign FPR, then test unseen variants. Controlled FPR with retained separation and improved recall would support a robust concept; otherwise the conclusion remains ranking improvement. This resolving check is planned, not an existing finding.
+\textbf{Interpretation and next check.} Training drift $D=0.179$--$0.237$ shows substantial representation movement. Yet the seed-15 held-out concept gap under homoglyphs increases only from 1.106 to 1.151, and contrast cosine from 0.182 to 0.188. Thus representation change and better ranking coexist with perturbation intolerance; they do not establish a robust concept. The focused follow-up will track $D_t$ during LoRA training on a fixed validation set and plot clean/perturbed validation AUROC against epoch and against $D_t$. Evaluate the learned concept's held-out separation before and after perturbation to help interpret these trajectories. Increasing drift with flat or falling perturbed AUROC would indicate movement without corresponding detection gains; improved AUROC with retained concept separation would support useful adaptation, without proving causation. Keep test evaluation separate from epoch selection, and report benign false alarms alongside AUROC. These trajectory measurements are planned, not existing findings.
 
 \section{Error analysis}
 \textbf{(a) Sample.} From \code{frozen / deepset\_homoglyph}, sample 10 false positives and 10 false negatives at random (seed 15), taking all errors of a type when fewer than 10 exist. \ErrorSampleDescription\ Every sampled row appears once in \code{errors.csv}; \code{error\_examples.csv} includes its text and score.
@@ -102,27 +104,19 @@ python check\_final\_checkpoint.py --split split.csv --scores scores.csv --error
 \textbf{(b) Checker output.} The complete unedited output is included in Appendix A. The numeric AUROC cells and changes in Section 1 match it. Epoch choices and validation-only learning curves appear in Appendix C. Near-perfect-score and weak-random-reference warnings are addressed in Section 1(c)--(d); error-sampling warnings, if any, must be resolved or explained in Section 4.
 
 \section{Plan to finish}
-\textbf{(a) Required elements and unfinished cells.}
+\textbf{(a) Focused remaining work.}
 \begin{center}\footnotesize
 \begin{tabular}{p{.64\linewidth}ll}\toprule
-Required element & Status & Finish date\\\midrule
-Two-dataset audit/splits, frozen baseline, public link & Done & Nov. 20\\
-20-epoch LoRA, validation selection, three seeds & Done & Nov. 20\\
-Zero-width/homoglyph/base64 comparison and errors & Done & Nov. 20\\
-Generated 100-row paraphrase comparison & \ParaphrasePlanStatus & \ParaphrasePlanDate\\
-Drift and mean/PCA concept diagnostics & Done & Nov. 20\\
-Broader concept controls, manual intent review, pair bootstrap & Started & Nov. 21\\
-Adapters: every clean and perturbed cell & Not started & Nov. 21\\
-Supported prompt/prefix tuning: every cell & Not started & Nov. 22\\
-Full fine-tuning: every cell & Not started & Nov. 22\\
-Word TF--IDF and lexical-shortcut analysis & Started & Nov. 21\\
-Protect AI prompt-injection-v2 unchanged-weight baseline & Not started & Nov. 21\\
-Perturbation drift and robustness-calibration check & Not started & Nov. 22\\
-Exploratory t-SNE/UMAP across seeds & Not started & Nov. 22\\
-Final uncertainty analysis and report revision & Started & Nov. 22\\\bottomrule
+Task & Status & Finish date\\\midrule
+Frozen/LoRA/NLI results, perturbation tests, drift and concepts & Done & Nov. 20\\
+Review paraphrase labels and concept controls & Started & Nov. 21\\
+Log LoRA $D_t$ and validation AUROC trajectories (three seeds) & Not started & Nov. 21\\
+Full fine-tuning baseline on the same clean/perturbed columns & Not started & Nov. 22\\
+Compare concept separation, AUROC and benign false alarms & Started & Nov. 22\\
+Finalize uncertainty analysis and report & Started & Nov. 22\\\bottomrule
 \end{tabular}
 \end{center}
-Unsupported prompt/prefix configurations will be documented as incompatible rather than counted as completed experiments. All remaining work is scheduled for November 21--22, with final revision on November 22, before November 23. Unfinished methods have no measured scores.
+The final comparison is frozen versus LoRA versus NLI versus full fine-tuning. Additional PEFT families, external detectors and exploratory visualizations are deferred. All remaining work is scheduled for November 21--22, before November 23. Full fine-tuning and the LoRA drift trajectories have no measured results yet.
 
 \textbf{(b) Measured compute and remaining budget.} Times below exclude downloads, package setup and API generation. Frozen extraction covers the retained originals; LoRA extraction covers originals, deterministic variants and concept pairs. The temporary loss head is excluded from the LoRA parameter count.
 \begin{center}\small\input{final_runtime_table.tex}\end{center}
