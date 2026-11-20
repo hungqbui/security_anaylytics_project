@@ -11,8 +11,8 @@ data generation and report analysis also run on Python 3.11 CPU.
 
 Run these notebooks top to bottom, in order:
 
-1. `final_data.ipynb` — deterministic perturbations,
-   GPT paraphrases and automated semantic review.
+1. `perturbation_preparation.ipynb` — deterministic perturbations,
+   GPT paraphrases, validation perturbations (`selection_perturbations.csv`) and automated semantic review.
 2. `final_experiment.ipynb` — frozen probe, 20 epochs for each of three LoRA seeds, validation-based epoch selection, representation/concept metrics.
 3. `zero_shot_nli.ipynb` — pretrained NLI detector using fixed class descriptions.
 4. `final_analysis.ipynb` — intervals, verdicts, seed spread, error categories, figure.
@@ -20,7 +20,7 @@ Run these notebooks top to bottom, in order:
 The equivalent single command is:
 
 ```bash
-jupyter execute --inplace --timeout=7200 final_data.ipynb final_experiment.ipynb zero_shot_nli.ipynb final_analysis.ipynb
+jupyter execute --inplace --timeout=7200 perturbation_preparation.ipynb final_experiment.ipynb zero_shot_nli.ipynb final_analysis.ipynb
 ```
 
 The generated CSVs make API regeneration optional. To regenerate them, configure
