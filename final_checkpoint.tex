@@ -1,0 +1,137 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.65in]{geometry}
+\usepackage{amsmath,amssymb,booktabs,graphicx,array,longtable,fancyvrb,listings}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\setlength{\emergencystretch}{2em}
+\makeatletter
+\renewcommand\section{\@startsection{section}{1}{0pt}{1.2ex plus .5ex minus .2ex}{.6ex plus .2ex}{\normalfont\large\bfseries}}
+\makeatother
+\newcommand{\code}[1]{\nolinkurl{#1}}
+\input{final_numbers.tex}
+\begin{document}
+\begin{center}
+{\large\bfseries Understanding Prompt-Injection Detection using LLM-encoded Representations}\\[3pt]
+{\bfseries Project 15: Final Checkpoint}\\
+Quang Hung Bui \quad COSC 4371, Fall 2026 \quad November 20, 2026\\
+\url{https://github.com/hungqbui/security_anaylytics_project}
+\end{center}
+
+\fontsize{9}{10.3}\selectfont
+\section{Main comparison}
+\textbf{Question.} Does PEFT improve detection under intent-preserving perturbations, and do its representation changes preserve the injection concept across wording variations? Clean AUROC near 0.99 motivates testing perturbations rather than expecting a meaningful gain at the clean ceiling.
+
+\textbf{(a) What ran and what stayed fixed.} Compare frozen DeBERTa plus a logistic probe (\code{frozen}) with LoRA plus the same probe-fitting protocol (\code{lora}). An auxiliary \code{zero\_shot} detector uses pretrained NLI weights with class descriptions and no prompt-injection training. It is an external control rather than a controlled encoder-adaptation value. Score every method on identical rows within each column: clean, zero-width, homoglyph and base64 copies of both datasets, plus the generated-paraphrase subset. Changed copies retain their original IDs and labels. The main checker comparison uses seed 15; seeds 15, 16 and 17 separately assess adaptation stability. They are repetitions, not additional values of the adaptation variable.
+
+Retain the midsemester 1,640 rows: 1,056 training, 269 validation and 315 test rows (116 deepset; 199 Safe-Guard). Use the pinned data/model revisions and exact split construction in the notebooks: seed 15, publisher test partitions, stratified 20\% validation within publisher training, fixed Safe-Guard 800/200 subsamples, and cross-boundary duplicate-group removal. The main encoder is \code{microsoft/deberta-v3-base}, revision \code{8ccc9b6f36199bec6961081d44eb72fb3f7353f3}. Training data, pretrained initialization, 128-token truncation, last-layer nonspecial/nonpadding mean pooling, test rows and probe hyperparameters remain fixed. No perturbations enter detector training. Changes since midsemester: execute a resource-limited LoRA pilot and perturbation columns; use higher AUROC as the direction of interest because the present question concerns improvement. The broader adapter/prompt/full-tuning matrix remains unfinished, dated in Section 6.
+
+LoRA updates query/value projections in encoder layers 11--12 only (zero-based 10--11): rank 4, scaling parameter 8, dropout 0.05, one epoch, batch 8, AdamW learning rate $10^{-4}$, weight decay 0.01, gradient clipping 1. A temporary linear head, learning rate $10^{-3}$, supplies class-weighted binary cross-entropy during adaptation; it is discarded. Each final probe fits training-only StandardScaler and balanced logistic regression ($C=1$, $L_2$, lbfgs, max iterations 2,000). Thus the head-fitting protocol is shared, while learned weights differ. The measured environment is Colab Tesla T4, Python 3.13.16; dependencies are in \code{requirements.txt}.
+
+\textbf{Perturbations.} Zero-width inserts U+200B between consecutive ASCII letters. Homoglyph substitution replaces lowercase a/e/o/p/c/x by visually similar Cyrillic letters. Both operate deterministically on every test text, including negatives. Base64 encodes the full UTF-8 request and prepends an instruction to decode and execute it. Its label refers to the decoded request; this is a separate encoding stress test because execution/decoding context and truncation can alter the operative task. \ParaphraseDescription
+
+\textbf{(b) Thresholds.} Positive class 1 is the publisher's injection label; higher scores mean more likely injection. Every detector selects its own threshold on the original pooled validation set: the lowest observed score with benign FPR at most 5\%. Reuse that threshold on every changed test column. \ThresholdDescription\ The zero-shot control uses \href{https://huggingface.co/MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli}{Laurer et al. DeBERTa-v3-base NLI model}, revision \code{6f5cf0a2b59cabb106aca4c287eed12e357e90eb}. Pair each text with fixed benign/injection hypotheses and softmax the two entailment logits; the injection probability is the score. Use a 128-token combined premise/hypothesis budget, truncating only the premise, batch 8. Only threshold calibration uses validation labels. Its NLI training and English-language focus differ from the main encoder setup, so this control cannot causally partition dataset and encoder effects.
+
+\textbf{(c) Leakage.} LoRA uses the \emph{same training set}. After duplicate removal, baseline train--test exact-text overlaps and train--validation overlaps are both 0 across pooled datasets; normalized-text, similarity-component and truncated-token overlap checks are also 0. LoRA inherits those same input boundaries. Concept reference pairs use training sources only; held-out concept sources are separate test rows. The zero-shot control fits no encoder or classifier on this project's training labels. These checks explain near-perfect-metric warnings; they cannot exclude unobserved source families, pretraining contamination or lexical shortcuts.
+
+\newpage
+\textbf{(d) Primary metric and results.} AUROC is the unchanged primary metric. Intervals are the final checker's 1,000-resample, row-bootstrap 95\% intervals; a column has one variant per source row. LoRA and zero-shot cells use their own thresholds, but AUROC itself is threshold independent. Paraphrase subsets have 25 positives/25 negatives per dataset when present; full deepset has 60/116 positives (51.72\%), Safe-Guard 63/199 (31.66\%). The 25 examples per class in each paraphrase column limit interval precision and power.
+\begin{center}\resizebox{\linewidth}{!}{\input{final_results_table.tex}}\end{center}
+\RandomReferenceDescription\ Score direction was checked: logistic probability column 1 corresponds to label 1; NLI entailment logits follow the configured label map and the injection hypothesis is candidate 1. Scores were not inverted using test outcomes. The generated paraphrases retain frozen AUROC 0.9856 (deepset) and 1.0000 (Safe-Guard), so this particular set does not demonstrate widespread paraphrase failure.
+
+\textbf{(e) Decision rule and verdicts.} The midsemester clean rule was an absolute AUROC change of at least 0.02 for yes, at most 0.00981 for no, intermediate changes inconclusive. Clean gains of 0.02 are impossible at the observed ceiling. As proposed at midsemester, fix a new perturbation rule using only frozen results before examining LoRA: the widest baseline half-interval across the six zero-width/homoglyph/base64 columns is \NoMargin. A higher-AUROC change $\geq\YesMargin$ is yes; a change $\leq\NoMargin$ is no; intermediate changes are undecided. Changes in the wrong direction are no. These are practical decision thresholds, not significance tests. Apply this fixed rule to paraphrases as a subsequent evaluation without retuning it. The checker changes and verdicts are:
+\begin{center}\small\input{final_verdict_table.tex}\end{center}
+
+\textbf{Stability across seeds.} The table reports AUROC mean, sample SD and range over three runs; the main checker table remains seed 15 rather than pooling repeated predictions as independent test rows. Frozen lbfgs probing is effectively deterministic with these settings, so its zero seed spread is not evidence about variation across datasets. Three LoRA seeds are descriptive and insufficient for strong population-level claims.
+The full per-column seed table is in Appendix B.
+
+\newpage
+\textbf{Assigned representation-change result.} For matched original test texts $S$, report
+\[
+ D_m(S)=\frac1{|S|}\sum_{x\in S}\frac{\|h_m(x)-h_0(x)\|_2}{\|h_0(x)\|_2+10^{-12}}.
+\]
+Frozen self-drift is exactly 0. Before adaptation, set a separate exploratory practical rule: $D\geq0.05$ indicates substantial movement (yes), $D\leq0.01$ indicates small movement (no), otherwise undecided. These thresholds express 5\%/1\% relative representation movement; they are not a robustness criterion or a threshold selected from observed LoRA outcomes. Each seed's interval resamples test rows 1,000 times (seed 15); seed spread is reported separately.
+\begin{center}\small\input{final_drift_table.tex}\end{center}
+\DriftDescription
+
+\textbf{Concept directions and expected interpretation.} Define the concept as attempting to override the intended task/instructions. For \ConceptTrainCount{} training-only source/control pairs, estimate
+\[
+ v_m=\frac1{K}\sum_{j=1}^{K}[h_m(I_j)-h_m(B_j)],\qquad u_m=v_m/\|v_m\|_2.
+\]
+This mean-difference construction is related to \href{https://aclanthology.org/2024.acl-long.828/}{contrastive activation addition (Rimsky et al., 2024)}; original \href{https://proceedings.mlr.press/v80/kim18d/kim18d.pdf}{TCAV (Kim et al., 2018)} instead learns a classifier normal. Controls quote the same source injection as inert data and explicitly request analysis without execution. Training and test controls use different fixed wrapper templates; 24 candidate sources per boundary are sampled independently, seed 17, limited to at most 80 whitespace words. Before final evaluation, GPT reviews source override intent and benign-control intent; \ConceptTrainCount{} training and \ConceptTestCount{} test pairs pass. This automated screening improves relevance but does not replace independent human annotation.
+
+On \ConceptTestCount{} held-out pairs, compare the projected gap $M_m=N^{-1}\sum_i u_m^\top[h_m(I_i)-h_m(B_i)]$, both clean and with homoglyph substitution applied to both pair members. Also report mean contrast cosine to control raw scaling. The frozen axis $u_0$ stays fixed for cross-method projected-gap changes; each $u_m$ is fixed before held-out evaluation. Larger direction/norm changes alone do not imply better semantic structure: useful reorganization should retain separation under perturbation and improve detection without increased benign false alarms. A small direction change with improved behavior could instead reflect better separation or the classifier.
+
+As a secondary diagnostic inspired by \href{https://arxiv.org/html/2310.01405v4#A3.SS1}{Zou et al.'s Representation Engineering (2023)}, stack normalized pair differences as rows, center them and compute $Z_c=U\Sigma V^\top$. The first \emph{right} singular vector $p_m$ is oriented toward positive training contrasts; report $1-p_0^\top p_m$. Centered PCA measures variation among contrasts and can remove their common mean. It is a candidate direction rather than a guaranteed semantic axis; near-tied singular values and sampling noise can destabilize it.
+\begin{center}\resizebox{\linewidth}{!}{\input{final_concept_table.tex}}\end{center}
+\ConceptDescription\ A shared analysis-wrapper format is a major confound, so these concept diagnostics cannot establish a wording-invariant injection concept. More diverse independently reviewed controls and training-pair bootstrap estimates are needed. The attached paper suggestion by Dr. Verma, \href{https://arxiv.org/abs/2508.11667}{GPS}, motivates examining embedding sensitivity; it does not make direction stability a semantic guarantee.
+
+\newpage
+\section{Figure}
+\begin{center}
+\includegraphics[width=.79\linewidth]{final_comparison.pdf}\\
+\small Figure 1. AUROC with checker-matched 95\% intervals for \code{deepset\_homoglyph}: 116 test rows, 60 positive (51.72\%). Values: frozen probe, seed-15 LoRA probe, and zero-shot descriptions.
+\end{center}
+\FigureFinding
+
+\section{Claim and limitation}
+\textbf{(a) Claim.} \ClaimDescription
+
+\textbf{(b) Limitation and resolving check.} The result concerns one epoch of rank-4 LoRA on the last two layers, on small publisher test sets with synthetic perturbations. Base64/Unicode substitutions can also increase truncation, while concept wrappers can introduce an easy formatting cue. A stronger adaptation schedule, longer input budget or genuinely unseen attack families could change the claim. Resolve this with a validation-selected training schedule, a longer-context sensitivity run, independently reviewed multi-template semantic pairs, and a newly collected test set; never select variants by whether they fool a detector. Report benign FPR as well as AUROC.
+
+\section{Error analysis}
+\textbf{(a) Sample.} From \code{frozen / deepset\_homoglyph}, sample 10 false positives and 10 false negatives at random (seed 15), taking all errors of a type when fewer than 10 exist. \ErrorSampleDescription\ Every sampled row appears once in \code{errors.csv}; \code{error\_examples.csv} includes its text and score.
+
+\textbf{(b) Categories.} Categories describe source content rather than proving a causal failure mechanism. Categorize from the original unobfuscated text. ``German benign request'' is a false alarm whose source contains a German cue (wie, wieviele, was, mein, ich, der, kinder, deutschland, gleichberechtigung or verkehrssicherheit); the remaining benign errors in this sample are English requests. ``Explicit override'' contains ignore, previous, prior, system, policy/policies, rules, constraint(s), zuvor or nicht; the remaining missed injections are ``implicit task or role redirection.'' These exclusive operational rules are implemented in the analysis notebook, and examples were inspected for consistency.
+\begin{center}\small\input{final_error_table.tex}\end{center}
+\ErrorFinding
+
+\newpage
+\section{Reproducibility}
+\textbf{(a) Files and commands.} Repository: \url{https://github.com/hungqbui/security_anaylytics_project}. Install \code{requirements.txt} outside the notebooks, then run \code{final\_data.ipynb}, \code{final\_experiment.ipynb}, \code{zero\_shot\_nli.ipynb} and \code{final\_analysis.ipynb} in order (single-command equivalent in README). They download pinned sources and write \code{split.csv}, \code{scores.csv} and \code{errors.csv}. Generated text/review CSVs fix the reported evaluation set and avoid API regeneration. Regeneration uses the exact notebook prompts, \code{gpt-6.1-sol} at the local OpenAI-compatible endpoint, and \code{OPENAI\_API\_KEY}; no credential is committed. Publish the updated executed notebooks and CSVs with the repository before submission.
+
+The baseline is re-extracted and refitted on the T4 rather than mixing old CPU scores with new GPU scores. \BaselineReproduction\ Seeds 15/16/17 affect LoRA initialization, shuffling and dropout; dataset sampling/splitting is seed 15; concept-source sampling is seed 17. Deterministic obfuscation rules have no sampling. No embedding caches or model checkpoint files are necessary to reproduce the pipeline. \TruncationDescription
+
+Download the supplied checker from Canvas and run, from the repository directory, on one line:
+\begin{quote}\small\ttfamily
+python check\_final\_checkpoint.py --split split.csv --scores scores.csv --errors errors.csv --metric auroc --reference frozen --direction higher
+\end{quote}
+\textbf{(b) Checker output.} The complete unedited output is included in Appendix A. The numeric AUROC cells and changes in Section 1 match it. Near-perfect-score and weak-random-reference warnings are addressed in Section 1(c)--(d); error-sampling warnings, if any, must be resolved or explained in Section 4.
+
+\section{Plan to finish}
+\textbf{(a) Required elements and unfinished cells.}
+\begin{center}\footnotesize
+\begin{tabular}{p{.64\linewidth}ll}\toprule
+Required element & Status & Finish date\\\midrule
+Two-dataset audit/splits, frozen baseline, public link & Done & Nov. 20\\
+LoRA pilot, three seeds, measured training budget & Done & Nov. 20\\
+Zero-width/homoglyph/base64 comparison and errors & Done & Nov. 20\\
+Generated 100-row paraphrase comparison & \ParaphrasePlanStatus & \ParaphrasePlanDate\\
+Drift and mean/PCA concept diagnostics & Done & Nov. 20\\
+Broader concept controls, manual intent review, pair bootstrap & Started & Nov. 23\\
+Adapters: every clean and perturbed cell & Not started & Nov. 24\\
+Supported prompt/prefix tuning: every cell & Not started & Nov. 25\\
+Full fine-tuning: every cell & Not started & Nov. 26\\
+Word TF--IDF and lexical-shortcut analysis & Started & Nov. 23\\
+Protect AI prompt-injection-v2 unchanged-weight baseline & Not started & Nov. 24\\
+Exploratory t-SNE/UMAP across seeds & Not started & Nov. 26\\
+Final uncertainty analysis and report revision & Started & Nov. 27\\\bottomrule
+\end{tabular}
+\end{center}
+Unsupported prompt/prefix configurations will be documented as incompatible rather than counted as completed experiments. These dates are the remaining-work plan after this checkpoint; unfinished methods have no measured scores.
+
+\textbf{(b) Measured compute and remaining budget.} Times below exclude downloads, package setup and API generation. Frozen extraction covers the retained originals; LoRA extraction covers originals, deterministic variants and concept pairs. The temporary loss head is excluded from the LoRA parameter count.
+\begin{center}\small\input{final_runtime_table.tex}\end{center}
+\ComputeDescription\ These extrapolations require recalibration after a pilot of each additional method.
+
+\textbf{AI assistance.} OpenAI Codex assisted with experiment implementation, analysis and LaTeX writing under the author's direction. \GenerationDisclosure\ The author must review generated labels, interpretations and the final submission.
+
+\clearpage
+\appendix
+\section*{Appendix A: complete final checker output}
+\lstinputlisting[basicstyle=\ttfamily\scriptsize,breaklines=true,columns=fullflexible,keepspaces=true,showstringspaces=false]{final_checker_output.txt}
+\clearpage
+\section*{Appendix B: AUROC across training seeds}
+Mean, sample standard deviation and range over LoRA seeds 15, 16 and 17. Frozen probing has zero spread at the shown precision.
+\begin{center}\small\input{final_seed_table.tex}\end{center}
+\end{document}

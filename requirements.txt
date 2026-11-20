@@ -1,4 +1,4 @@
-# Python 3.11
+# Python 3.11 or 3.13
 numpy==2.2.3
 pandas==2.2.3
 scipy==1.17.1
@@ -10,4 +10,9 @@ sentencepiece==0.2.0
 protobuf==5.29.3
 pyarrow==19.0.1
 matplotlib==3.10.0
-ipython==9.17.1
+ipython==8.32.0
+peft==0.14.0
+nbformat==5.11.1
+nbclient==0.11.0
+ipykernel==6.29.5
+torchvision==0.21.0
