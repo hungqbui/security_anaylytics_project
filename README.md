@@ -7,9 +7,11 @@ Install packages **outside the notebooks** with `python -m pip install -r requir
 The model experiments were executed on a Colab NVIDIA L4 with Python 3.13.16;
 data generation and report analysis also run on Python 3.11 CPU.
 
+`data_preparation.ipynb` contains shared downloads, audits, duplicate protection, data splits and validation roles. The pipeline notebooks call it with `%run`; it can also be executed independently.
+
 Run these notebooks top to bottom, in order:
 
-1. `final_data.ipynb` — publisher downloads, original splits, deterministic perturbations,
+1. `final_data.ipynb` — deterministic perturbations,
    GPT paraphrases and automated semantic review.
 2. `final_experiment.ipynb` — frozen probe, 20 epochs for each of three LoRA seeds, validation-based epoch selection, representation/concept metrics.
 3. `zero_shot_nli.ipynb` — pretrained NLI detector using fixed class descriptions.
