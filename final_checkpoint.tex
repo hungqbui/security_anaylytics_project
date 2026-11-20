@@ -111,17 +111,18 @@ Two-dataset audit/splits, frozen baseline, public link & Done & Nov. 20\\
 Zero-width/homoglyph/base64 comparison and errors & Done & Nov. 20\\
 Generated 100-row paraphrase comparison & \ParaphrasePlanStatus & \ParaphrasePlanDate\\
 Drift and mean/PCA concept diagnostics & Done & Nov. 20\\
-Broader concept controls, manual intent review, pair bootstrap & Started & Nov. 23\\
-Adapters: every clean and perturbed cell & Not started & Nov. 24\\
-Supported prompt/prefix tuning: every cell & Not started & Nov. 25\\
-Full fine-tuning: every cell & Not started & Nov. 26\\
-Word TF--IDF and lexical-shortcut analysis & Started & Nov. 23\\
-Protect AI prompt-injection-v2 unchanged-weight baseline & Not started & Nov. 24\\
-Exploratory t-SNE/UMAP across seeds & Not started & Nov. 26\\
-Final uncertainty analysis and report revision & Started & Nov. 27\\\bottomrule
+Broader concept controls, manual intent review, pair bootstrap & Started & Nov. 21\\
+Adapters: every clean and perturbed cell & Not started & Nov. 21\\
+Supported prompt/prefix tuning: every cell & Not started & Nov. 22\\
+Full fine-tuning: every cell & Not started & Nov. 22\\
+Word TF--IDF and lexical-shortcut analysis & Started & Nov. 21\\
+Protect AI prompt-injection-v2 unchanged-weight baseline & Not started & Nov. 21\\
+Perturbation drift and robustness-calibration check & Not started & Nov. 22\\
+Exploratory t-SNE/UMAP across seeds & Not started & Nov. 22\\
+Final uncertainty analysis and report revision & Started & Nov. 22\\\bottomrule
 \end{tabular}
 \end{center}
-Unsupported prompt/prefix configurations will be documented as incompatible rather than counted as completed experiments. These dates are the remaining-work plan after this checkpoint; unfinished methods have no measured scores.
+Unsupported prompt/prefix configurations will be documented as incompatible rather than counted as completed experiments. All remaining work is scheduled for November 21--22, with final revision on November 22, before November 23. Unfinished methods have no measured scores.
 
 \textbf{(b) Measured compute and remaining budget.} Times below exclude downloads, package setup and API generation. Frozen extraction covers the retained originals; LoRA extraction covers originals, deterministic variants and concept pairs. The temporary loss head is excluded from the LoRA parameter count.
 \begin{center}\small\input{final_runtime_table.tex}\end{center}
