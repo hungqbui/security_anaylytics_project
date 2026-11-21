@@ -63,21 +63,21 @@ Frozen self-drift is exactly 0. Before adaptation, set a separate exploratory pr
 \]
 This mean-difference construction is related to \href{https://aclanthology.org/2024.acl-long.828/}{contrastive activation addition (Rimsky et al., 2024)}; original \href{https://proceedings.mlr.press/v80/kim18d/kim18d.pdf}{TCAV (Kim et al., 2018)} instead learns a classifier normal. Controls quote the same source injection as inert data and explicitly request analysis without execution. Training and test controls use different fixed wrapper templates; 24 candidate sources per boundary are sampled independently, seed 17, limited to at most 80 whitespace words. Before final evaluation, GPT reviews source override intent and benign-control intent; \ConceptTrainCount{} training and \ConceptTestCount{} test pairs pass. This automated screening improves relevance but does not replace independent human annotation.
 
-The primary concept-change diagnostic compares the frozen and adapted concept directions, independently of their magnitudes:
+\textbf{Planned concept robustness comparison.} For each encoder $m$ (frozen or LoRA), estimate concept directions from the same matched source/control pairs before and after an intent-preserving perturbation $T$:
 \[
-C_m=\frac{v_0^\top v_m}{\|v_0\|_2\|v_m\|_2}=u_0^\top u_m,\qquad \theta_m=\arccos(C_m).
+ v_m^{\rm clean}=\frac1K\sum_j[h_m(I_j)-h_m(B_j)],\qquad
+ v_m^T=\frac1K\sum_j[h_m(TI_j)-h_m(TB_j)].
 \]
-Similarity 1 means the same direction, 0 orthogonal directions, and $-1$ opposite directions. This is equivalent to one minus the previously reported cosine distance. It measures concept rotation, not whether that rotation improves detection. The table's \emph{axis cosine} compares concept vectors across models; its clean/homoglyph \emph{contrast cosines} instead compare held-out pair differences with each model's own concept direction.
-
-On \ConceptTestCount{} held-out pairs, compare the projected gap $M_m=N^{-1}\sum_i u_m^\top[h_m(I_i)-h_m(B_i)]$, both clean and with homoglyph substitution applied to both pair members. Also report mean contrast cosine to control raw scaling. Each $u_m$ is fixed before held-out evaluation. Useful reorganization should retain separation under perturbation and improve detection; rotation alone is not a benefit.
-
-Retain the midsemester projected-separation change as a secondary measure along the fixed frozen concept direction:
+Compare them within each model using
 \[
-\Delta M_m=\frac1N\sum_i u_0^\top\!\left([h_m(I_i)-h_m(B_i)]-[h_0(I_i)-h_0(B_i)]\right).
+ R_m(T)=\frac{(v_m^{\rm clean})^\top v_m^T}
+ {\|v_m^{\rm clean}\|_2\|v_m^T\|_2}.
 \]
-Positive $\Delta M_m$ means increased injection--benign separation along $u_0$; negative values mean decreased separation. This fixed-axis change differs from subtracting the table's clean gaps, which use different axes $u_m$ and $u_0$. It also differs from direction rotation $1-u_0^\top u_m$ and overall representation drift $D$.
+A value near 1 means that the estimated injection concept points in a similar direction despite the perturbation. Higher $R_{\rm LoRA}(T)$ than $R_{\rm frozen}(T)$ would support improved directional invariance after clean-data fine-tuning. Apply each transformation to both members of each pair and use identical pairs across models; bootstrap matched pairs to assess uncertainty. This comparison replaces cross-model direction rotation and $\Delta M$ as the concept robustness focus. Its values have not yet been computed; existing contrast cosines below are a different measurement.
 
-As a secondary diagnostic inspired by \href{https://arxiv.org/html/2310.01405v4#A3.SS1}{Zou et al.'s Representation Engineering (2023)}, stack normalized pair differences as rows, center them and compute $Z_c=U\Sigma V^\top$. The first \emph{right} singular vector $p_m$ is oriented toward positive training contrasts; report $1-p_0^\top p_m$. Centered PCA measures variation among contrasts and can remove their common mean. It is a candidate direction rather than a guaranteed semantic axis; near-tied singular values and sampling noise can destabilize it.
+Direction stability supports, but does not alone establish, reliance on an invariant injection feature: a stable wrapper or dataset shortcut can also produce similar directions. Check retained separation on disjoint held-out pairs and perturbed detection performance. If either concept vector is zero or nearly zero, flag the direction as undefined or unstable rather than interpreting a high cosine as robustness.
+
+\textbf{Existing held-out concept evidence.} On \ConceptTestCount{} held-out pairs, compare the projected gap $M_m=N^{-1}\sum_i u_m^\top[h_m(I_i)-h_m(B_i)]$, both clean and with homoglyph substitution applied to both pair members. The clean training-estimated $u_m$ stays fixed for this evaluation. The table's contrast cosine is the mean cosine between each held-out pair difference and $u_m$; it is not the cosine between clean and perturbed mean concept vectors.
 \begin{center}\resizebox{\linewidth}{!}{\input{final_concept_table.tex}}\end{center}
 \ConceptDescription\ Across all three LoRA seeds, both the held-out homoglyph gap and contrast cosine exceed the frozen baseline. This consistency supports improved retention of the measured injection concept under homoglyph perturbation; a small geometric change can still matter for detection. Clean results are mixed, so the improvement is specific to the perturbed comparison. The shared analysis-wrapper format and small held-out pair set limit how broadly this evidence generalizes to other wording variations. More diverse independently reviewed controls and training-pair bootstrap estimates would test that scope. The attached paper suggestion by Dr. Verma, \href{https://arxiv.org/abs/2508.11667}{GPS}, motivates examining embedding sensitivity; it does not make direction stability a semantic guarantee.
 
@@ -120,11 +120,11 @@ python check\_final\_checkpoint.py --split split.csv --scores scores.csv --error
 \begin{center}\footnotesize
 \begin{tabular}{p{.64\linewidth}ll}\toprule
 Task & Status & Finish date\\\midrule
-Frozen/LoRA/NLI results, perturbation tests, drift and concepts & Done & Nov. 20\\
+Frozen/LoRA/NLI results, perturbation tests and initial diagnostics & Done & Nov. 20\\
 Review paraphrase labels and concept controls & Started & Nov. 21\\
 Log LoRA $D_t$ and validation AUROC trajectories (three seeds) & Not started & Nov. 21\\
 Full fine-tuning baseline on the same clean/perturbed columns & Not started & Nov. 22\\
-Compare concept separation, AUROC and benign false alarms & Started & Nov. 22\\
+Compare clean/perturbed concept directions and detection & Started & Nov. 22\\
 Finalize uncertainty analysis and report & Started & Nov. 22\\\bottomrule
 \end{tabular}
 \end{center}
