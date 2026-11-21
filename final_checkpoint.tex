@@ -57,26 +57,25 @@ Frozen self-drift is exactly 0. Use a separate exploratory practical rule: $D\ge
 \begin{center}\small\input{final_drift_table.tex}\end{center}
 \DriftDescription
 
-\textbf{Concept directions and expected interpretation.} Define the concept as attempting to override the intended task/instructions. For \ConceptTrainCount{} training-only source/control pairs, estimate
-\[
- v_m=\frac1{K}\sum_{j=1}^{K}[h_m(I_j)-h_m(B_j)],\qquad u_m=v_m/\|v_m\|_2.
-\]
-The mean-difference construction is related to \href{https://aclanthology.org/2024.acl-long.828/}{contrastive activation addition (Rimsky et al., 2024)}; original \href{https://proceedings.mlr.press/v80/kim18d/kim18d.pdf}{TCAV (Kim et al., 2018)} learns a classifier normal. Controls request analysis of the same injection as inert quoted data. Appendix D gives pair construction and screening details.
+\textbf{Concept-direction robustness (change from midsemester).} Replace the screened quoted-control sample with 20 random injection--benign pairs from the retained test set: 10 pairs per dataset, 20 distinct publisher-positive and 20 distinct publisher-negative prompts. Sample without replacement using seed 17, without score-based selection or automated intent screening. Reuse the same 40 sources across encoders and perturbations. This estimates a broad publisher-label injection direction, rather than the narrower override-versus-quoted-analysis concept. It is a diagnostic only: these rows never select weights, epochs or thresholds.
 
-\textbf{Concept robustness comparison (change from midsemester).} For each encoder $m$ (frozen or LoRA), estimate concept directions from the same matched source/control pairs before and after an intent-preserving perturbation $T$:
+For each encoder $m$ (frozen or LoRA), estimate
 \[
- v_m^{\rm clean}=\frac1K\sum_j[h_m(I_j)-h_m(B_j)],\qquad
- v_m^T=\frac1K\sum_j[h_m(TI_j)-h_m(TB_j)].
+ v_m^{\rm clean}=\frac1{20}\sum_{j=1}^{20}[h_m(I_j)-h_m(B_j)],\qquad
+ v_m^T=\frac1{20}\sum_{j=1}^{20}[h_m(TI_j)-h_m(TB_j)],
 \]
-Compare them within each model using
+and compare the clean and perturbed directions within that encoder:
 \[
  R_m(T)=\frac{(v_m^{\rm clean})^\top v_m^T}
  {\|v_m^{\rm clean}\|_2\|v_m^T\|_2}.
 \]
-A value near 1 indicates a similar concept direction despite perturbation. Higher $R_{\rm LoRA}(T)$ than $R_{\rm frozen}(T)$ supports improved directional invariance after clean-data fine-tuning. Use identical pairs and apply $T$ to both members. This replaces cross-model direction rotation and $\Delta M$ as the concept robustness focus; base64 remains a separate stress test. Stable shortcuts can also yield high similarity, so interpret it alongside held-out separation and detection. Flag zero or near-zero concept means as undefined or unstable.
+Near 1 means a stable class-contrast direction; higher $R_{\rm LoRA}(T)$ than $R_{\rm frozen}(T)$ supports increased directional invariance. The mean difference equals the difference of the two class means, so reordering the injection--benign pairing cannot change it. Averaging may reduce random variation, but systematic topic, language or dataset differences can remain. Direction stability must therefore be interpreted alongside separation and detection. Flag zero or near-zero concept means as undefined or unstable; base64 remains a separate encoding stress test.
+
 \begin{center}\resizebox{\linewidth}{!}{\input{final_concept_robustness_table.tex}}\end{center}
-The table reports $R_m(T)$ with 95\% matched-pair bootstrap intervals on the \ConceptTestCount{} held-out pairs (four deepset and five Safe-Guard sources). Appendix D gives training-pair results, paired changes relative to frozen and the existing held-out gap diagnostics.
-\ConceptDescription\ The earlier held-out homoglyph gaps and contrast cosines still improve across all three seeds (Appendix D), but alignment with a training-derived axis is different from stability of the clean/perturbed mean directions. The shared analysis-wrapper format and small held-out pair set limit generalization; larger, more diverse independently reviewed controls are needed.
+The table reports $R_m(T)$ with 95\% intervals from 1,000 bootstrap draws (seed 15). Because these are unmatched examples, resample injections and benign prompts independently within each dataset, preserving 10 per class per dataset. Reuse the same source draws across clean/perturbed versions and encoders for paired intervals on $R_m(T)-R_0(T)$ (Appendix D).
+\ConceptDescription
+
+The mean-difference construction is related to \href{https://aclanthology.org/2024.acl-long.828/}{contrastive activation addition (Rimsky et al., 2024)}; original \href{https://proceedings.mlr.press/v80/kim18d/kim18d.pdf}{TCAV (Kim et al., 2018)} learns a classifier normal. The earlier screened-pair gap diagnostics remain auxiliary results in Appendix D, using a different, narrower concept definition.
 
 \newpage
 \section{Figure}
@@ -91,7 +90,7 @@ The table reports $R_m(T)$ with 95\% matched-pair bootstrap intervals on the \Co
 
 \textbf{(b) Limitation.} The AUROC gains do not establish reliable detection at the clean-calibrated threshold: Safe-Guard homoglyph FPR rises from 0.5956 to 0.7868, and zero-width FPR remains 1.0000. Thus the positive verdicts concern ranking improvement; threshold transfer and benign false alarms remain unresolved.
 
-\textbf{Interpretation and next check.} LoRA improves the projected homoglyph gap and contrast cosine, but not clean/perturbed concept-direction similarity in the point estimates. These measurements capture different properties: better separation along one axis does not imply that the concept direction survives a perturbation. Appendix C relates validation drift $D_t$ to AUROC over training; continued movement after the selected epoch need not improve validation ranking. The remaining check is whether a larger, independently reviewed concept set confirms this pattern, alongside benign false alarms and the full fine-tuning comparison.
+\textbf{Interpretation and next check.} The new random-pair label direction is not consistently more stable after LoRA. This differs from the earlier gains in projected separation on screened quoted-control pairs: the sample, concept definition and geometric property differ. Better ranking need not preserve the full mean class-contrast direction, since the logistic probe can exploit other components and within-class structure. Appendix C relates validation drift to AUROC; continued movement after the selected epoch need not improve ranking. Cached representations now allow larger or repeated random concept samples on CPU to assess sampling stability, alongside benign false alarms and the planned full fine-tuning comparison.
 
 \section{Error analysis}
 \textbf{(a) Sample.} From \code{frozen / deepset\_homoglyph}, sample 10 false positives and 10 false negatives at random (seed 15), taking all errors of a type when fewer than 10 exist. \ErrorSampleDescription\ Every sampled row appears once in \code{errors.csv}; \code{error\_examples.csv} includes its text and score.
@@ -102,9 +101,9 @@ The table reports $R_m(T)$ with 95\% matched-pair bootstrap intervals on the \Co
 
 \newpage
 \section{Reproducibility}
-\textbf{(a) Files and commands.} Repository: \url{https://github.com/hungqbui/security_anaylytics_project}. Install \code{requirements.txt} outside the notebooks, then run \code{perturbation\_preparation.ipynb}, \code{final\_experiment.ipynb}, \code{zero\_shot\_nli.ipynb} and \code{final\_analysis.ipynb} in order (single-command equivalent in README). Shared \code{data\_preparation.ipynb} supplies downloads, audits and splits via \texttt{\%run}; the pipeline notebooks write \code{split.csv}, \code{scores.csv} and \code{errors.csv}. Generated text/review CSVs fix the reported evaluation set and avoid API regeneration. \code{logits.csv} preserves calibration/test logits and probabilities by row, method, seed and condition; NLI also retains both description-entailment logits. It supports metric/threshold reanalysis, but does not reconstruct representations. \code{concept\_robustness.csv} stores within-model clean/perturbed concept similarities and paired bootstrap changes from frozen. Regeneration uses the exact notebook prompts, \code{gpt-6.1-sol} at the OpenAI-compatible endpoint configured by \code{API\_URL}, and \code{OPENAI\_API\_KEY}; no credential is committed. Publish the updated executed notebooks and CSVs with the repository before submission.
+\textbf{(a) Files and commands.} Repository: \url{https://github.com/hungqbui/security_anaylytics_project}. Install \code{requirements.txt} outside the notebooks, then run \code{perturbation\_preparation.ipynb}, \code{final\_experiment.ipynb}, \code{concept\_reanalysis.ipynb}, \code{zero\_shot\_nli.ipynb} and \code{final\_analysis.ipynb} in order (single-command equivalent in README). Shared \code{data\_preparation.ipynb} supplies downloads, audits and splits via \texttt{\%run}; the pipeline notebooks write \code{split.csv}, \code{scores.csv} and \code{errors.csv}. Generated text/review CSVs fix the reported evaluation set and avoid API regeneration. \code{logits.csv} preserves calibration/test logits and probabilities by row, method, seed and condition; NLI also retains both description-entailment logits. It supports metric/threshold reanalysis, but does not reconstruct representations. \code{random\_concept\_robustness.csv} stores the new 20-pair clean/perturbed concept similarities and paired changes from frozen. Regeneration uses the exact notebook prompts, \code{gpt-6.1-sol} at the OpenAI-compatible endpoint configured by \code{API\_URL}, and \code{OPENAI\_API\_KEY}; no credential is committed. Publish the updated executed notebooks and CSVs with the repository before submission.
 
-The baseline is re-extracted and refitted on the L4 rather than mixing old CPU scores with new GPU scores. \BaselineReproduction\ Seeds 15/16/17 affect LoRA initialization, shuffling and dropout; dataset sampling/splitting is seed 15; concept-source sampling is seed 17. Deterministic obfuscation rules have no sampling. No embedding caches or model checkpoint files are necessary to reproduce the pipeline. \TruncationDescription
+The baseline is re-extracted and refitted on the L4 rather than mixing old CPU scores with new GPU scores. \BaselineReproduction\ Seeds 15/16/17 affect LoRA initialization, shuffling and dropout; dataset sampling/splitting is seed 15; concept-source sampling is seed 17. Deterministic obfuscation rules have no sampling. Four compressed \code{representations\_*.npz} files retain original and test-variant embeddings with source IDs and conditions for frozen and the three LoRA seeds. Run \code{concept\_reanalysis.ipynb} on these arrays for CPU-only changes to the cached-source concept sample or metric; no model weights are cached. \TruncationDescription
 
 Download the supplied checker from Canvas and run, from the repository directory, on one line:
 \begin{quote}\small\ttfamily
@@ -127,7 +126,7 @@ Finalize uncertainty analysis and report & Started & Nov. 22\\\bottomrule
 \end{center}
 The final comparison is frozen versus LoRA versus NLI versus full fine-tuning. Additional PEFT families, external detectors and exploratory visualizations are deferred. All remaining work is scheduled for November 21--22, before November 23. Full fine-tuning has no measured results yet.
 
-\textbf{(b) Measured compute and remaining budget.} Times below exclude downloads, package setup and API generation. Frozen extraction covers the retained originals; LoRA extraction covers originals, deterministic variants and concept pairs. The temporary loss head is excluded from the LoRA parameter count.
+\textbf{(b) Measured compute and remaining budget.} Times cover optimization/selection and main extraction, excluding downloads, setup, API generation, diagnostic bootstraps and cache writing. Frozen extraction covers the retained originals; LoRA extraction covers originals, deterministic variants and concept pairs. The temporary loss head is excluded from the LoRA parameter count.
 \begin{center}\small\input{final_runtime_table.tex}\end{center}
 \ComputeDescription\ These extrapolations require recalibration after a pilot of each additional method.
 
@@ -152,15 +151,13 @@ Optimization uses AdamW: adapter learning rate $10^{-4}$, temporary-head learnin
 Drift is measured on the same 132 clean selection texts at each epoch, relative to their frozen representations. The third panel averages zero-width, homoglyph and base64 validation AUROCs. Curves describe association during training; they do not establish that drift causes detection gains.
 \clearpage
 \section*{Appendix D: concept robustness details}
-This mean-difference construction is related to \href{https://aclanthology.org/2024.acl-long.828/}{contrastive activation addition (Rimsky et al., 2024)}; original \href{https://proceedings.mlr.press/v80/kim18d/kim18d.pdf}{TCAV (Kim et al., 2018)} instead learns a classifier normal. Controls quote the same source injection as inert data and explicitly request analysis without execution. Training and test controls use different fixed wrapper templates; 24 candidate sources per boundary are sampled independently, seed 17, limited to at most 80 whitespace words. Before final evaluation, GPT reviews source override intent and benign-control intent; \ConceptTrainCount{} training and \ConceptTestCount{} test pairs pass. This automated screening improves relevance but does not replace independent human annotation.
-
-Apply each transformation to both members of each pair and use identical pairs across models. Compute $R_m(T)$ separately on the \ConceptTrainCount{} training and \ConceptTestCount{} held-out pairs, without fitting or selecting a detector on held-out pairs. Use 1,000 matched-pair bootstrap draws (seed 15), sharing draws across encoders for intervals on $R_m(T)-R_0(T)$. The attached paper suggestion by Dr. Verma, \href{https://arxiv.org/abs/2508.11667}{GPS}, motivates examining embedding sensitivity; it does not make direction stability a semantic guarantee.
-
-The training and held-out concept-pair sets contain \ConceptTrainCount{} and \ConceptTestCount{} pairs respectively. Directions are estimated from clean and perturbed versions of the identical pairs within each set. No concept measurement selects epochs or thresholds. Bootstrap intervals condition on these trained models and available source pairs; adaptation-seed variation is reported separately.
-\begin{center}\resizebox{\linewidth}{!}{\input{concept_training_robustness_table.tex}}\end{center}
-Training-pair clean/perturbed direction similarity $R_m(T)$ and 95\% matched-pair bootstrap intervals.
+\code{random\_concept\_pairs.csv} records the 20 fixed test pairs and both source IDs. \code{random\_concept\_perturbations.csv} contains their 160 texts (40 sources across four conditions); \code{random\_concept\_robustness.csv} stores the measured similarities and bootstrap intervals. No prompt is reused within either sampled class. There is no topic matching or semantic acceptance filter, so this broad label contrast can include publisher-label ambiguity and class-correlated shortcuts. Bootstrap intervals condition on the trained models and available sampled sources; they do not resolve those semantic limitations.
 \begin{center}\small\input{concept_robustness_change_table.tex}\end{center}
-Held-out $R_m(T)-R_0(T)$ with paired 95\% intervals from the same resampled source pairs. An interval spanning zero leaves the direction of the change uncertain for that seed and style.
+$R_m(T)-R_0(T)$ uses the same resampled source IDs across models and conditions, while resampling the two unmatched classes independently within dataset. Intervals spanning zero leave the direction of the change uncertain.
+
+\textbf{Earlier quoted-control diagnostics (different concept).} The earlier analysis screened 24 training and 24 test injection sources (seed 17, at most 80 whitespace words). Controls quote the same source as inert data and request analysis without execution, using different training/test wrapper templates. GPT screened override intent and benign-control intent; \ConceptTrainCount{} training and \ConceptTestCount{} test pairs passed. These are automatically screened rather than independently human-verified pairs and are separate from the new 20 random label pairs.
 \begin{center}\resizebox{\linewidth}{!}{\input{final_concept_table.tex}}\end{center}
-On held-out pairs, the projected gap is $M_m=N^{-1}\sum_i u_m^\top[h_m(I_i)-h_m(B_i)]$, both clean and with homoglyph substitution applied to both pair members. The clean training-estimated $u_m$ stays fixed. Contrast cosine is the mean cosine between each held-out pair difference and $u_m$; it differs from the cosine between clean and perturbed mean concept vectors $R_m(T)$.
+The earlier held-out projected gap is $M_m=N^{-1}\sum_i u_m^\top[h_m(I_i)-h_m(B_i)]$, both clean and with homoglyph substitution applied to both members. The clean training-estimated $u_m$ stays fixed. Contrast cosine is the mean cosine between each held-out pair difference and $u_m$. These values do not measure the new random-sample direction stability $R_m(T)$.
+
+The attached paper suggestion by Dr. Verma, \href{https://arxiv.org/abs/2508.11667}{GPS}, motivates examining embedding sensitivity; it does not make direction stability a semantic guarantee.
 \end{document}
