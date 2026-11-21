@@ -1,0 +1,17 @@
+row_id,value,column,category
+deepset:test:64,frozen,deepset_homoglyph,German benign request
+deepset:test:54,frozen,deepset_homoglyph,German benign request
+deepset:test:63,frozen,deepset_homoglyph,German benign request
+deepset:test:62,frozen,deepset_homoglyph,German benign request
+deepset:test:50,frozen,deepset_homoglyph,German benign request
+deepset:test:47,frozen,deepset_homoglyph,English benign request
+deepset:test:58,frozen,deepset_homoglyph,German benign request
+deepset:test:55,frozen,deepset_homoglyph,German benign request
+deepset:test:5,frozen,deepset_homoglyph,English benign request
+deepset:test:9,frozen,deepset_homoglyph,English benign request
+deepset:test:105,frozen,deepset_homoglyph,explicit override
+deepset:test:90,frozen,deepset_homoglyph,explicit override
+deepset:test:114,frozen,deepset_homoglyph,explicit override
+deepset:test:86,frozen,deepset_homoglyph,implicit task or role redirection
+deepset:test:107,frozen,deepset_homoglyph,implicit task or role redirection
+deepset:test:79,frozen,deepset_homoglyph,implicit task or role redirection

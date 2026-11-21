@@ -2,9 +2,15 @@
 
 Repository: https://github.com/hungqbui/security_anaylytics_project
 
-Only notebooks, cached embeddings, package requirements and this README are
-included. Generated datasets, metrics, figures, checker output and reports are
-excluded by `.gitignore`.
+The repo contains notebooks, cached embeddings, package requirements and the
+three CSVs explicitly required by the final checkpoint:
+
+- `data_preparation/split.csv` — fixed train/validation/test membership and labels.
+- `metrics_export/scores.csv` — scored test rows for each method and condition.
+- `metrics_export/errors.csv` — sampled errors and their categories.
+
+Reports, figures, checker output and all other generated CSVs remain excluded by
+`.gitignore`.
 
 - `data_preparation/`: raw-data auditing/splits, perturbation generation, and
   input reconstruction for cached analysis.
@@ -48,7 +54,8 @@ new inputs or extraction rules do.
 
 ## Full experiment pipeline
 
-Prepared datasets and previous metric exports are not bundled. To regenerate
+Prepared text datasets and additional metric exports are not bundled. The three
+committed CSVs preserve the submitted results. To regenerate
 paraphrases and reviews, configure the full OpenAI-compatible chat-completions
 endpoint and its key:
 
@@ -76,8 +83,7 @@ probabilities in `metrics_export/logits.csv`. The historical
 `experiments/project15_checkpoint.ipynb` writes the old prediction schema and
 should be run separately from the final pipeline.
 
-Download the course checker separately and run it after regenerating the full
-pipeline outputs:
+Download the course checker separately and run it on the committed files:
 
 ```bash
 python check_final_checkpoint.py --split data_preparation/split.csv --scores metrics_export/scores.csv --errors metrics_export/errors.csv --metric auroc --reference frozen --direction higher

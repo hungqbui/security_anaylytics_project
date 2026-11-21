@@ -5,10 +5,15 @@ __pycache__/
 *.out
 *.synctex.gz
 
-# Generated datasets, metrics, figures and reports are not part of this repo.
+# Exclude generated exports except the three CSVs required by the checkpoint.
 *.csv
 *.pdf
 *.png
 *.tex
 *.txt
 !requirements.txt
+
+# Required committed submission data.
+!/data_preparation/split.csv
+!/metrics_export/scores.csv
+!/metrics_export/errors.csv
