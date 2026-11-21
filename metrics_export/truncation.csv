@@ -1,9 +1,0 @@
-column,sum,count
-deepset_base64,41,116
-deepset_homoglyph,21,116
-deepset_paraphrase,0,50
-deepset_zero_width,29,116
-safeguard_base64,104,199
-safeguard_homoglyph,64,199
-safeguard_paraphrase,4,50
-safeguard_zero_width,87,199

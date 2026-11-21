@@ -4,3 +4,11 @@ __pycache__/
 *.log
 *.out
 *.synctex.gz
+
+# Generated datasets, metrics, figures and reports are not part of this repo.
+*.csv
+*.pdf
+*.png
+*.tex
+*.txt
+!requirements.txt
