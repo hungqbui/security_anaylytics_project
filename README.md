@@ -92,3 +92,14 @@ source bootstrap and changes relative to frozen. Lower distance means greater
 clean/perturbed similarity; raw and relative distances also depend on scale.
 
 The arrays use the reported last-layer pooling, 128-token budget and selected epochs. New input conditions or a different representation extraction rule still require model inference.
+
+`concept_sample_size.ipynb` checks 10, 20, 40, 60, 80, 100 and 112 pairs with
+100 nested random subsets per size, reusing the same sources across models and
+conditions. It also computes a reference from all 315 test prompts, retaining
+equal dataset weights. The notebook reproduces the original 20-pair cosines as
+an implementation check. All computation uses the cached arrays on CPU.
+Outputs are `concept_sample_size_results.csv`, `concept_sample_size_summary.csv`,
+`concept_sample_size_changes.csv`, `concept_full_test_reference.csv` and
+`concept_sample_size_stability.pdf/png`. The plotted bands describe variation
+across subsets of the fixed test pool, not population confidence intervals or
+additional independent model runs. The PDF includes this analysis in Appendix E.

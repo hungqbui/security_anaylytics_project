@@ -57,25 +57,25 @@ Frozen self-drift is exactly 0. Use a separate exploratory practical rule: $D\ge
 \begin{center}\small\input{final_drift_table.tex}\end{center}
 \DriftDescription
 
-\textbf{Concept-direction robustness (change from midsemester).} Replace the screened quoted-control sample with 20 random injection--benign pairs from the retained test set: 10 pairs per dataset, 20 distinct publisher-positive and 20 distinct publisher-negative prompts. Sample without replacement using seed 17, without score-based selection or automated intent screening. Reuse the same 40 sources across encoders and perturbations. This estimates a broad publisher-label injection direction, rather than the narrower override-versus-quoted-analysis concept. It is a diagnostic only: these rows never select weights, epochs or thresholds.
-
-For each encoder $m$ (frozen or LoRA), estimate
+\textbf{Concept-direction robustness (change from midsemester).} Estimate a broad publisher-label injection direction from random test injections and benign prompts. Each subset contains $K$ distinct examples per class, equally divided between datasets; no score-based or semantic acceptance filter is applied. The initial 20-pair draw is followed by a sensitivity study at $K=10,20,40,60,80,100,112$, with 100 nested random draws per size (seeds 17--116). The same source subsets are used across models and conditions. These are post-hoc representation diagnostics; they never choose weights, epochs or thresholds.
 \[
- v_m^{\rm clean}=\frac1{20}\sum_{j=1}^{20}[h_m(I_j)-h_m(B_j)],\qquad
- v_m^T=\frac1{20}\sum_{j=1}^{20}[h_m(TI_j)-h_m(TB_j)],
+ v_m^{\rm clean}(K)=\frac1K\sum_{j=1}^K[h_m(I_j)-h_m(B_j)],\qquad
+ v_m^T(K)=\frac1K\sum_{j=1}^K[h_m(TI_j)-h_m(TB_j)],
 \]
-and compare the clean and perturbed directions within that encoder:
 \[
- R_m(T)=\frac{(v_m^{\rm clean})^\top v_m^T}
- {\|v_m^{\rm clean}\|_2\|v_m^T\|_2}.
+ R_m(T;K)=\frac{(v_m^{\rm clean}(K))^\top v_m^T(K)}
+ {\|v_m^{\rm clean}(K)\|_2\|v_m^T(K)\|_2}.
 \]
-Near 1 means a stable class-contrast direction; higher $R_{\rm LoRA}(T)$ than $R_{\rm frozen}(T)$ supports increased directional invariance. The mean difference equals the difference of the two class means, so reordering the injection--benign pairing cannot change it. Averaging may reduce random variation, but systematic topic, language or dataset differences can remain. Direction stability must therefore be interpreted alongside separation and detection. Flag zero or near-zero concept means as undefined or unstable; base64 remains a separate encoding stress test.
+Near 1 means a stable class-contrast direction. Pairing order does not affect the difference of class means; averaging reduces sampling variation but cannot remove systematic label/topic confounding. Samples use equal dataset weights. The largest balanced size is 112 pairs, limited by the 56 deepset benign rows. For a full-pool reference, use all 315 test prompts with the same equal-dataset target:
+\[
+ v_{m,\mathrm{all}}^{s}=\frac12\sum_{d\in\{\mathrm{deepset},\mathrm{safeguard}\}}
+ (\bar h_{m,d,1}^{s}-\bar h_{m,d,0}^{s}),
+\]
+where each $\bar h$ is the class mean within its dataset and condition $s$. The full-pool clean/perturbed cosines are:
+\begin{center}\small\input{concept_full_reference_table.tex}\end{center}
+\ConceptDescription\ At $K=112$, subset directions approach their full-pool references (mean cosine at least 0.971 across conditions/models), while clean/perturbed alignment remains below 1. Thus larger samples support relative alignment improvement, not complete invariance. Appendix E gives the sample-size curves and spreads; these characterize this fixed pool, not independent-dataset confidence intervals. The initial 20-pair result and bootstrap intervals remain in Appendix D.
 
-\begin{center}\resizebox{\linewidth}{!}{\input{final_concept_robustness_table.tex}}\end{center}
-The table reports $R_m(T)$ with 95\% intervals from 1,000 bootstrap draws (seed 15). Because these are unmatched examples, resample injections and benign prompts independently within each dataset, preserving 10 per class per dataset. Reuse the same source draws across clean/perturbed versions and encoders for paired intervals on $R_m(T)-R_0(T)$ (Appendix D).
-\ConceptDescription
-
-The mean-difference construction is related to \href{https://aclanthology.org/2024.acl-long.828/}{contrastive activation addition (Rimsky et al., 2024)}; original \href{https://proceedings.mlr.press/v80/kim18d/kim18d.pdf}{TCAV (Kim et al., 2018)} learns a classifier normal. The earlier screened-pair gap diagnostics remain auxiliary results in Appendix D, using a different, narrower concept definition.
+The mean-difference construction is related to \href{https://aclanthology.org/2024.acl-long.828/}{contrastive activation addition (Rimsky et al., 2024)}; original \href{https://proceedings.mlr.press/v80/kim18d/kim18d.pdf}{TCAV (Kim et al., 2018)} learns a classifier normal. The earlier screened-pair gap diagnostics use a narrower override concept (Appendix D).
 
 \newpage
 \section{Figure}
@@ -90,7 +90,7 @@ The mean-difference construction is related to \href{https://aclanthology.org/20
 
 \textbf{(b) Limitation.} The AUROC gains do not establish reliable detection at the clean-calibrated threshold: Safe-Guard homoglyph FPR rises from 0.5956 to 0.7868, and zero-width FPR remains 1.0000. Thus the positive verdicts concern ranking improvement; threshold transfer and benign false alarms remain unresolved.
 
-\textbf{Interpretation and next check.} The new random-pair label direction is not consistently more stable after LoRA. This differs from the earlier gains in projected separation on screened quoted-control pairs: the sample, concept definition and geometric property differ. Better ranking need not preserve the full mean class-contrast direction, since the logistic probe can exploit other components and within-class structure. Appendix C relates validation drift to AUROC; continued movement after the selected epoch need not improve ranking. Cached representations now allow larger or repeated random concept samples on CPU to assess sampling stability, alongside benign false alarms and the planned full fine-tuning comparison.
+\textbf{Interpretation and next check.} The original single 20-pair draw is atypical: its mixed changes do not represent the larger repeated-sampling result. With more examples, the mean class directions stabilize and LoRA retains greater clean/perturbed alignment than frozen on this pool. This supports improved class-direction stability alongside Safe-Guard ranking gains, while base64 remains a counterexample to treating alignment alone as detector robustness. Label ambiguity, topic effects, dataset-specific behavior and threshold transfer remain unresolved. Appendix C relates validation drift to AUROC; the remaining method comparison is full fine-tuning.
 
 \section{Error analysis}
 \textbf{(a) Sample.} From \code{frozen / deepset\_homoglyph}, sample 10 false positives and 10 false negatives at random (seed 15), taking all errors of a type when fewer than 10 exist. \ErrorSampleDescription\ Every sampled row appears once in \code{errors.csv}; \code{error\_examples.csv} includes its text and score.
@@ -151,6 +151,9 @@ Optimization uses AdamW: adapter learning rate $10^{-4}$, temporary-head learnin
 Drift is measured on the same 132 clean selection texts at each epoch, relative to their frozen representations. The third panel averages zero-width, homoglyph and base64 validation AUROCs. Curves describe association during training; they do not establish that drift causes detection gains.
 \clearpage
 \section*{Appendix D: concept robustness details}
+\begin{center}\resizebox{\linewidth}{!}{\input{final_concept_robustness_table.tex}}\end{center}
+Initial single 20-pair draw: clean/perturbed cosine and 95\% stratified class-bootstrap interval. This sample is not representative of the repeated-sampling results in Appendix E.
+
 \code{random\_concept\_pairs.csv} records the 20 fixed test pairs and both source IDs. \code{random\_concept\_perturbations.csv} contains their 160 texts (40 sources across four conditions); \code{random\_concept\_robustness.csv} stores the measured similarities and bootstrap intervals. No prompt is reused within either sampled class. There is no topic matching or semantic acceptance filter, so this broad label contrast can include publisher-label ambiguity and class-correlated shortcuts. Bootstrap intervals condition on the trained models and available sampled sources; they do not resolve those semantic limitations.
 \begin{center}\small\input{concept_robustness_change_table.tex}\end{center}
 $R_m(T)-R_0(T)$ uses the same resampled source IDs across models and conditions, while resampling the two unmatched classes independently within dataset. Intervals spanning zero leave the direction of the change uncertain.
@@ -160,4 +163,14 @@ $R_m(T)-R_0(T)$ uses the same resampled source IDs across models and conditions,
 The earlier held-out projected gap is $M_m=N^{-1}\sum_i u_m^\top[h_m(I_i)-h_m(B_i)]$, both clean and with homoglyph substitution applied to both members. The clean training-estimated $u_m$ stays fixed. Contrast cosine is the mean cosine between each held-out pair difference and $u_m$. These values do not measure the new random-sample direction stability $R_m(T)$.
 
 The attached paper suggestion by Dr. Verma, \href{https://arxiv.org/abs/2508.11667}{GPS}, motivates examining embedding sensitivity; it does not make direction stability a semantic guarantee.
+
+\clearpage
+\section*{Appendix E: concept sample-size sensitivity}
+\code{concept\_sample\_size.ipynb} uses only the cached representations. For each of 100 sampling seeds (17--116), independently permute the four dataset/class source pools and take nested prefixes at each size. Draw without replacement, with $K/2$ examples in each of the four strata. Training seeds 15/16/17 are kept separate; the 100 subsets are not new training runs or independent test datasets. All models and conditions use the same source IDs for a given draw.
+\begin{center}\includegraphics[width=\linewidth]{concept_sample_size_stability.pdf}\end{center}
+Lines show mean clean/perturbed cosine; bands show the 5th--95th percentile across source subsets. These are finite-pool sampling spreads, not population confidence intervals. The original fixed 20-pair draw used direct sampling rather than nested permutation prefixes; its values are independently reproduced by this notebook.
+\begin{center}\small\input{concept_sample_size_table.tex}\end{center}
+Each LoRA range spans the three training seeds' means over 100 source draws. At 112 pairs, every sampled LoRA-minus-frozen cosine change is positive for all three perturbations and seeds. Full-pool references use all 315 prompts with equal dataset weights, avoiding discarding available sources merely to balance counts. No zero/near-zero concept means occur. These results support relative stability of this label contrast within the available pool, without establishing a semantically pure or universally invariant concept.
+
+Detailed cosines, raw/relative/unit Euclidean distances, convergence to full-pool directions and matched model changes are in \code{concept\_sample\_size\_results.csv}, \code{concept\_sample\_size\_summary.csv}, \code{concept\_sample\_size\_changes.csv} and \code{concept\_full\_test\_reference.csv}. Unit Euclidean distance gives the same directional comparison as cosine. The improved base64 alignment does not yield reliable base64 detection, so direction stability is not sufficient for operational robustness.
 \end{document}
