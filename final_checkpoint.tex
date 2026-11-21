@@ -63,9 +63,15 @@ Frozen self-drift is exactly 0. Before adaptation, set a separate exploratory pr
 \]
 This mean-difference construction is related to \href{https://aclanthology.org/2024.acl-long.828/}{contrastive activation addition (Rimsky et al., 2024)}; original \href{https://proceedings.mlr.press/v80/kim18d/kim18d.pdf}{TCAV (Kim et al., 2018)} instead learns a classifier normal. Controls quote the same source injection as inert data and explicitly request analysis without execution. Training and test controls use different fixed wrapper templates; 24 candidate sources per boundary are sampled independently, seed 17, limited to at most 80 whitespace words. Before final evaluation, GPT reviews source override intent and benign-control intent; \ConceptTrainCount{} training and \ConceptTestCount{} test pairs pass. This automated screening improves relevance but does not replace independent human annotation.
 
-On \ConceptTestCount{} held-out pairs, compare the projected gap $M_m=N^{-1}\sum_i u_m^\top[h_m(I_i)-h_m(B_i)]$, both clean and with homoglyph substitution applied to both pair members. Also report mean contrast cosine to control raw scaling. The frozen axis $u_0$ stays fixed for cross-method projected-gap changes; each $u_m$ is fixed before held-out evaluation. Larger direction/norm changes alone do not imply better semantic structure: useful reorganization should retain separation under perturbation and improve detection without increased benign false alarms. A small direction change with improved behavior could instead reflect better separation or the classifier.
+The primary concept-change diagnostic compares the frozen and adapted concept directions, independently of their magnitudes:
+\[
+C_m=\frac{v_0^\top v_m}{\|v_0\|_2\|v_m\|_2}=u_0^\top u_m,\qquad \theta_m=\arccos(C_m).
+\]
+Similarity 1 means the same direction, 0 orthogonal directions, and $-1$ opposite directions. This is equivalent to one minus the previously reported cosine distance. It measures concept rotation, not whether that rotation improves detection. The table's \emph{axis cosine} compares concept vectors across models; its clean/homoglyph \emph{contrast cosines} instead compare held-out pair differences with each model's own concept direction.
 
-Report the midsemester concept-drift measure as the signed change in held-out separation along the frozen concept direction:
+On \ConceptTestCount{} held-out pairs, compare the projected gap $M_m=N^{-1}\sum_i u_m^\top[h_m(I_i)-h_m(B_i)]$, both clean and with homoglyph substitution applied to both pair members. Also report mean contrast cosine to control raw scaling. Each $u_m$ is fixed before held-out evaluation. Useful reorganization should retain separation under perturbation and improve detection; rotation alone is not a benefit.
+
+Retain the midsemester projected-separation change as a secondary measure along the fixed frozen concept direction:
 \[
 \Delta M_m=\frac1N\sum_i u_0^\top\!\left([h_m(I_i)-h_m(B_i)]-[h_0(I_i)-h_0(B_i)]\right).
 \]
@@ -78,7 +84,7 @@ As a secondary diagnostic inspired by \href{https://arxiv.org/html/2310.01405v4#
 \newpage
 \section{Figure}
 \begin{center}
-\includegraphics[width=.79\linewidth]{final_comparison.pdf}\\
+\includegraphics[width=.74\linewidth]{final_comparison.pdf}\\
 \small Figure 1. AUROC with checker-matched 95\% intervals for \code{deepset\_homoglyph}: 116 test rows, 60 positive (51.72\%). Values: frozen probe, seed-15 LoRA probe, and zero-shot descriptions.
 \end{center}
 \FigureFinding
