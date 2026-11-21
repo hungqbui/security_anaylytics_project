@@ -86,4 +86,9 @@ notebook and `concept_reanalysis.ipynb`, then `final_analysis.ipynb`; those anal
 need no GPU or LoRA retraining. A full fresh run executes `concept_reanalysis.ipynb`
 between `final_experiment.ipynb` and the final analysis.
 
+`random_concept_distances.csv` adds raw Euclidean distance, distance relative to
+the clean concept norm, and unit-normalized Euclidean distance, with the same
+source bootstrap and changes relative to frozen. Lower distance means greater
+clean/perturbed similarity; raw and relative distances also depend on scale.
+
 The arrays use the reported last-layer pooling, 128-token budget and selected epochs. New input conditions or a different representation extraction rule still require model inference.
