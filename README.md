@@ -95,3 +95,11 @@ Notebooks pin dataset/model revisions. Publisher labels and automated reviews ar
 not independently verified semantic ground truth. OpenAI Codex assisted with
 implementation and analysis; GPT-6.1-sol generated the original paraphrases and
 supplied automated intent reviews.
+
+## Interactive presentation
+
+[Open the presentation on GitHub Pages](https://hungqbui.github.io/security_anaylytics_project/).
+
+The presentation uses animated SVG and includes the supplementary slides after the references. Click or press Space/Right to advance, Left to go back, F for fullscreen, and N for speaker notes.
+
+GitHub Pages serves the self-contained `docs/index.html` from the `main` branch’s `/docs` folder.
