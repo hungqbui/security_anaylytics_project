@@ -2,12 +2,6 @@
 
 Repository: https://github.com/hungqbui/security_anaylytics_project
 
-## Interactive presentation
-
-The self-contained presentation is published at
-https://hungqbui.github.io/security_anaylytics_project/ and is deployed from
-`docs/` by the GitHub Pages workflow.
-
 The repo contains notebooks, cached embeddings, package requirements and the
 three CSVs explicitly required by the final checkpoint:
 
